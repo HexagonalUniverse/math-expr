@@ -1,0 +1,31 @@
+# .gitignore at <REP-NAME>
+# ------------------------
+
+### C IDEs ###
+.vscode/
+.vs/
+
+### Python ###
+.idea/
+*.venv/
+scripts/__pycache__/
+
+### Cabal ###
+# dist-newstyle/
+
+### Binaries ###
+bin/
+tests/bin
+*.o
+*.a
+*.lib
+*.dll
+*.so
+*.exe
+
+### Data and logging ###
+*.log
+data/nothing.txt
+
+### Temporaries ###
+temp/
