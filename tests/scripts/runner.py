@@ -106,6 +106,8 @@ class TestRunner(object):
 
         end_time: float = time()
 
+        # print(f"Runned {program_filepath}: {process_result.stdout} [{type(process_result.stdout)}")
+
         return TestCaseStats(
             test_case.compare_output(process_result.stdout),
             process_result.returncode, end_time - start_time, process_result.stdout

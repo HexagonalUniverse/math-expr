@@ -16,8 +16,12 @@ class TestCase(object):
     exp_output: str | None
 
     def compare_output(self, output: str) -> bool:
+        # print(f"Comparing \"{self.exp_output}\" with \"{output}\"")
+
         if self.exp_output is None:
             return True
+        elif type(self.exp_output) == list:
+            return self.exp_output == self.__normalize_output(output).split("\n")
         return self.__normalize_output(self.exp_output) == self.__normalize_output(output)
 
     @staticmethod

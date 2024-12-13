@@ -1,0 +1,58 @@
+# <tests/data/nothing.yaml>
+# -------------------------
+# Unit tests for expressions.
+
+version: "1.0.0"
+
+# Test-executables will track a list of program tests.
+test-executables:
+
+  - program: "tokenization.exe"
+    tests:
+        - input: ["hello world"]
+          output: ["hello", "world"]
+
+        - input: ["x+5*x(nothing)"]
+          output: ["x", "+", "5", "*", "x", "(", "nothing", ")"]
+
+  - program: "parser.exe"
+    tests:
+        ### Testing for simple arithmetic ###
+        - input: ["4+4", "4-5", "1/2", "7*8"]
+          output: ["8.000000", "-1.000000", "0.500000", "56.000000"]
+
+        - input: ["sqrt 2", "sqrt 1"]
+          output: ["1.414214", "1.000000"]
+
+        - input: ["abs 1", "abs (0 - 1)"]
+          output: ["1.000000", "1.000000"]
+
+        ### Testing for simple operation order ###
+        - input: ["4+5*4"]
+          output: ["24.000000"]
+
+        - input: ["4+5*4/3"]
+          output: ["10.666667"]
+
+        - input: ["4+5*4"]
+          output: ["24.000000"]
+
+        - input: ["4+5*4"]
+          output: ["24.000000"]
+
+        - input: ["1 + sqrt (9) + (20 / 5) - 2"]
+          output: ["6.000000"]
+
+        ### Testing parenthesis enclosure ###
+        - input: ["( 8 + ( 8"]
+          output: ["S2"]
+
+        ### Testing operands enclosure ###
+        - input: ["1 / sqrt 1 /"]
+          output: ["S5"]
+
+        - input: ["(abs (0 - 1))"]
+          output: ["1.000000"]
+
+
+

@@ -9,7 +9,7 @@ from runner import *
 
 def __main():
     parser = TestParser()
-    z = parser.parse_test_datafile("data/nothing.yaml")
+    z = parser.parse_test_datafile("data/exp-unit.yaml")
 
     runner = TestRunner()
     runner(z)
