@@ -15,7 +15,7 @@
 
 #define in_range(_A, _B, _X)	( ((_B) >= (_X)) && ((_X) >= (_A)) )
 #define is_blank(_X)			( ((_X) == ' ' ) || ((_X) == '\n' ) )
-#define is_operator(_X)			( ((_X) == '+') || ((_X) == '-') || ((_X) == '*') || ((_X) == '/') )
+#define is_operator(_X)			( ((_X) == '+') || ((_X) == '-') || ((_X) == '*') || ((_X) == '/') || ((_X) == '^') || ((_X) == '%'))
 #define is_parenthesis(_X)		( ((_X) == '(') || ((_X) == ')') )
 #define is_numeral(_X)			in_range('0', '9', (char) _X)
 #define is_symbol(_X)			in_range('a', 'z', (char) _X)

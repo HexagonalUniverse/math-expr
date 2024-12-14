@@ -98,9 +98,12 @@ static inline bool
 is_token_operator(const token_t _Token) {
 	if (_Token[1] != '\0')
 	{
-		if (strcmp(_Token, "sqrt") == 0) return true;
-		if (strcmp(_Token, "abs") == 0) return true;
-		if (strcmp(_Token, "int") == 0) return true;
+		if (strcmp(_Token, "sqrt") == 0)			return true;
+		else if (strcmp(_Token, "log") == 0)		return true;
+		else if (strcmp(_Token, "ln") == 0)			return true;
+		else if (strcmp(_Token, "l2") == 0)			return true;
+		else if (strcmp(_Token, "abs") == 0)		return true;
+		else if (strcmp(_Token, "int") == 0)		return true;
 		return false;
 	}
 	return is_operator(* _Token);
@@ -115,6 +118,15 @@ operator_precedence(const token_t _Operator)
 	/*	Verifying whether the operator have one character or not. */
 	if (_Operator[1] != '\0') {
 		if (strcmp(_Operator, "sqrt") == 0)
+			return 4;
+
+		else if (strcmp(_Operator, "log") == 0)
+			return 4;
+		
+		else if (strcmp(_Operator, "ln") == 0)
+			return 4;
+
+		else if (strcmp(_Operator, "l2") == 0)
 			return 4;
 
 		else if (strcmp(_Operator, "int") == 0)
@@ -139,7 +151,7 @@ operator_precedence(const token_t _Operator)
 	case '^': // exponentiation
 		return 4;
 
-	case '|': // absolute
+	case '|': // absolute (NYI)
 		return 3;
 
 	case '(': // scoping
@@ -159,10 +171,12 @@ operator_operands(const token_t _Operator)
 		case '+':
 		case '-':
 		case '*':
-		case '/': case '\\':
+		case '/': 
+		case '^':
+		case '%':
 			return 2;
 
-		case '(':
+		case '(': // * TO EXPLAIN
 			return 1;
 
 		default:
@@ -170,14 +184,19 @@ operator_operands(const token_t _Operator)
 		}
 	}
 
+	// Unaries (single var. functions)
+	return 1;
+#if 0 // TODO: add others...
 	if (strcmp(_Operator, "abs") == 0)
+		return 1;
+	else if (strcmp(_Operator, "log") == 0)
 		return 1;
 	else if (strcmp(_Operator, "sqrt") == 0)
 		return 1;
 	else if (strcmp(_Operator, "int") == 0)
 		return 1;
-
 	return -2;
+#endif
 }
 
 /*	Defines what is the maximum of enclosure depth (parenthesis) an expression can have. */
@@ -224,19 +243,11 @@ int parse_expression(const char * expression, struct tokenc * const parsed_symbo
 				return PE_CONSEC_OPERATORS;
 			}
 
-			// and if that's the case, and the operator was binary, increments operands of the enclosure.
-		#if 0
-			else if ((last_type == 1) && (op_operands == 1) && (operator_operands(tok_exp.tokens[i - 1]) == 2)) {
-				++ parenthesis_context[parenthesis_count];
-				fprintf(stderr, "[+] (unary) P[%d] = %d\n", parenthesis_count, parenthesis_context[parenthesis_count]);
-			}
-		#endif
-
 			// recognizes a new term given by the unary operator.
 			if ((! enclosed) && (op_operands == 1)) {
 				enclosed = true;
 				++ parenthesis_context[parenthesis_count];
-				fprintf(stderr, "[+] (UNARY) P[%d] = %d\n", parenthesis_count, parenthesis_context[parenthesis_count]);
+				// fprintf(stderr, "[+] (UNARY) P[%d] = %d\n", parenthesis_count, parenthesis_context[parenthesis_count]);
 			}
 
 			// preparing for the start of an operand.
@@ -261,7 +272,7 @@ int parse_expression(const char * expression, struct tokenc * const parsed_symbo
 		// Adding a number / symbol onto the queue.
 		else if (is_token_numeral(tok_exp.tokens[i]) || is_token_symbol(tok_exp.tokens[i])) {
 			if (last_type == 2) {
-				fprintf(stderr, "Operand following operand!\n");
+				// fprintf(stderr, "Operand following operand!\n");
 				return PE_CONSEC_OPERANDS;
 			}
 
@@ -269,7 +280,7 @@ int parse_expression(const char * expression, struct tokenc * const parsed_symbo
 			// increments the # of terms of the enclosure as long the current one isn't closed.
 			if (! enclosed) {
 				++ parenthesis_context[parenthesis_count];
-				fprintf(stderr, "[+] (numeral) P[%d] = %d\n", parenthesis_count, parenthesis_context[parenthesis_count]);
+				// fprintf(stderr, "[+] (numeral) P[%d] = %d\n", parenthesis_count, parenthesis_context[parenthesis_count]);
 			}
 
 			last_type = 2;
@@ -291,7 +302,7 @@ int parse_expression(const char * expression, struct tokenc * const parsed_symbo
 			*/
 			if (! enclosed) {
 				++ parenthesis_context[parenthesis_count];
-				fprintf(stderr, "[+] (left p) P[%d] = %d\n", parenthesis_count, parenthesis_context[parenthesis_count]);
+				// fprintf(stderr, "[+] (left p) P[%d] = %d\n", parenthesis_count, parenthesis_context[parenthesis_count]);
 			}
 
 			last_type = 3;
@@ -328,7 +339,7 @@ int parse_expression(const char * expression, struct tokenc * const parsed_symbo
 		}
 
 
-	#if 1
+	#if 0
 		fprintf(stderr, "\n-> \"%s\"\n", tok_exp.tokens[i]);
 		//for (size_t j = i; j < tok_exp.qtt; ++ j) fprintf(stderr, "%s ", tok_exp.tokens[j]);
 
@@ -357,14 +368,8 @@ int parse_expression(const char * expression, struct tokenc * const parsed_symbo
 		parenthesis_context[parenthesis_count] -= (operator_operands(operator_stack[stack_size]) - 1);
 	}
 	
-	fprintf(stderr, "]\n\tQueue(%llu): [ ", parsed_symbols->qtt);
-	for (size_t j = 0; j < parsed_symbols->qtt; ++ j)
-		fprintf(stderr, "%s ", parsed_symbols->tokens[j]);
-	fprintf(stderr, "]\n");
-
 	// fprintf(stderr, "pc: "); for (int k = 0; k <= parenthesis_count; ++k) fprintf(stderr, "%d ", parenthesis_context[k]); fprintf(stderr, "\n\n");
 
-	fprintf(stderr, "#operands: %d\n", parenthesis_context[parenthesis_count]);
 	if (parenthesis_context[parenthesis_count] != 1) {
 		fprintf(stderr, "unmatch operands\n");
 		return PE_INVALID_PARENTHESIS_OP_CONTEXT ;
@@ -397,6 +402,10 @@ evaluate_binary_operation(double _Operand1, double _Operand2, const token_t _Ope
 		return _Operand1 * _Operand2;
 	case '/':
 		return _Operand1 / _Operand2;
+	case '^':
+		return pow(_Operand1, _Operand2);
+	case '%':
+		return _Operand1 - floor(_Operand1 / _Operand2) * _Operand2;
 	}
 
 	fprintf(stderr, "[%s] Not yet implemented 2: %s\n", __func__, _Operator);
@@ -416,6 +425,16 @@ evaluate_unary_operation(double _Operand, const token_t _Operator)
 	if (strcmp(_Operator, "sqrt") == 0) {
 		return sqrt(_Operand);
 	}
+	else if (strcmp(_Operator, "ln") == 0) {
+		return log(_Operand);
+	}
+	else if (strcmp(_Operator, "log") == 0) {
+		return log10(_Operand);
+	}
+	else if (strcmp(_Operator, "l2") == 0) {
+		return log2(_Operand);
+	}
+
 	else if (strcmp(_Operator, "abs") == 0) {
 		return __absolute(_Operand);
 	}

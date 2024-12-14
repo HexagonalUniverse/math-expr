@@ -7,6 +7,7 @@ version: "1.0.0"
 # Test-executables will track a list of program tests.
 test-executables:
 
+    # Asserting the tokenization process.
   - program: "tokenization.exe"
     tests:
         - input: ["hello world"]
@@ -15,6 +16,7 @@ test-executables:
         - input: ["x+5*x(nothing)"]
           output: ["x", "+", "5", "*", "x", "(", "nothing", ")"]
 
+    # Asserting the parsing process.
   - program: "parser.exe"
     tests:
         ### Testing for simple arithmetic ###
@@ -54,5 +56,18 @@ test-executables:
         - input: ["(abs (0 - 1))"]
           output: ["1.000000"]
 
+    # Asserting the evaluation process.
+    # x = 18, y = 443, z = 888.
+  - program: "eval.exe"
+    tests:
+        ### Testing some simple symbolic evaluation ###
+        - input: ["x + y + z"]
+          output: ["1349.000000"]
 
+        ### Testing for the evaluation of complex expressions ###
+        - input: ["(x + y)", "sqrt (z - 100)", "y^2", "y^2 % z", "(x + y) / sqrt (z - 100) - y^2 % z"]
+          output: ["461.000000", "28.071338", "196249.000000", "1.000000", "15.422445"]
+
+        - input: ["abs (x - sqrt y)", "z ^ (1 / 3) / (x + y)", "log y", "abs (x - sqrt y) * (z ^ (1 / 3) / (x + y)) + log y"]
+          output: ["3.047565", "0.020850", "2.646404", "2.709945"]
 
