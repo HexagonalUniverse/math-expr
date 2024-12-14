@@ -8,10 +8,10 @@
 #include <stdlib.h> // for "size_t"
 
 
-	/*	Pre-definitions
-		---------------
+/*	Pre-definitions
+	---------------
 
-		Useful abreviations in this context. */
+	Useful abreviations in this context. */
 
 #define in_range(_A, _B, _X)	( ((_B) >= (_X)) && ((_X) >= (_A)) )
 #define is_blank(_X)			( ((_X) == ' ' ) || ((_X) == '\n' ) )
@@ -39,7 +39,7 @@ struct tokenc {
 
 /*	Tokenizes the given expression. */
 struct tokenc tokenize_expression(const char *);
-// (Essentially Lexical Analysis)
+// (Essentially does Lexical Analysis)
 
 
 
@@ -47,9 +47,17 @@ struct tokenc tokenize_expression(const char *);
 	Parsing
 	======= */
 
-	/*	Inputs an expression (string) and returns (by ref.) its tokens in reverse-polish notation.*/
-int parse_expression(const char *, struct tokenc * const);
-// (Essentially Syntax Analysis)
+/*	Inputs an expression (string) and returns (by ref.) its tokens in reverse-polish notation.*/
+enum PARSE_ERROR {
+	PE_OK,
+	PE_PARENTHESIS_CLOSE_MISMATCH, // more parenthesis closed than open.
+	PE_PARENTHESIS_OPEN_MISMATCH, // more parenthesis open than closed..
+	PE_CONSEC_OPERATORS,
+	PE_CONSEC_OPERANDS,
+	PE_INVALID_PARENTHESIS_OP_CONTEXT,
+
+} parse_expression(const char *, struct tokenc * const);
+// (Essentially does Syntax Analysis)
 
 
 /*	==========
@@ -66,7 +74,7 @@ struct s_table {
 };
 
 int evaluate_expression(const struct tokenc *, const struct s_table *, double * const);
-// (There goes Semantic Analysis)
+// (There goes the Semantic Analysis perhaps)
 
 
 

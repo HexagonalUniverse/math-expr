@@ -56,6 +56,10 @@ test-executables:
         - input: ["(abs (0 - 1))"]
           output: ["1.000000"]
 
+        ### (...)
+        - input: ["0.001 * 0.002", "0.01 * x"]
+          output: ["0.000002", "0.000000"]
+
     # Asserting the evaluation process.
     # x = 18, y = 443, z = 888.
   - program: "eval.exe"
@@ -63,6 +67,9 @@ test-executables:
         ### Testing some simple symbolic evaluation ###
         - input: ["x + y + z"]
           output: ["1349.000000"]
+
+        - input: ["0.01 * x"]
+          output: ["0.180000"]
 
         ### Testing for the evaluation of complex expressions ###
         - input: ["(x + y)", "sqrt (z - 100)", "y^2", "y^2 % z", "(x + y) / sqrt (z - 100) - y^2 % z"]

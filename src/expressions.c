@@ -69,10 +69,17 @@ struct tokenc tokenize_expression(const char * _Expression) {
 static inline bool
 is_token_numeral(const token_t _Token) {
 	size_t iterator = 0u;
+	bool decimal = false;
+
 	while (_Token[iterator] != '\0') {
 		char buffer = _Token[iterator ++];
 		if (is_numeral(buffer))
 			continue;
+
+		else if ((! decimal) && (buffer == '.')) {
+			decimal = true;
+			continue;
+		}
 		return false;
 	}
 	return true;
@@ -202,16 +209,7 @@ operator_operands(const token_t _Operator)
 /*	Defines what is the maximum of enclosure depth (parenthesis) an expression can have. */
 #define EXP_MAX_DEPTH	0X20u
 
-enum PARSE_ERROR {
-	PE_OK,
-	PE_PARENTHESIS_CLOSE_MISMATCH, // more parenthesis closed than open.
-	PE_PARENTHESIS_OPEN_MISMATCH, // more parenthesis open than closed..
-	PE_CONSEC_OPERATORS,
-	PE_CONSEC_OPERANDS,
-	PE_INVALID_PARENTHESIS_OP_CONTEXT,
-};
-
-int parse_expression(const char * expression, struct tokenc * const parsed_symbols)
+enum PARSE_ERROR parse_expression(const char * expression, struct tokenc * const parsed_symbols)
 {
 	// Tokenized expression.
 	const struct tokenc tok_exp = tokenize_expression(expression);
@@ -247,7 +245,6 @@ int parse_expression(const char * expression, struct tokenc * const parsed_symbo
 			if ((! enclosed) && (op_operands == 1)) {
 				enclosed = true;
 				++ parenthesis_context[parenthesis_count];
-				// fprintf(stderr, "[+] (UNARY) P[%d] = %d\n", parenthesis_count, parenthesis_context[parenthesis_count]);
 			}
 
 			// preparing for the start of an operand.
@@ -272,16 +269,12 @@ int parse_expression(const char * expression, struct tokenc * const parsed_symbo
 		// Adding a number / symbol onto the queue.
 		else if (is_token_numeral(tok_exp.tokens[i]) || is_token_symbol(tok_exp.tokens[i])) {
 			if (last_type == 2) {
-				// fprintf(stderr, "Operand following operand!\n");
 				return PE_CONSEC_OPERANDS;
 			}
 
-			// if (! ((last_type == 1) && (operator_operands(tok_exp.tokens[i - 1]) == 1)))
 			// increments the # of terms of the enclosure as long the current one isn't closed.
-			if (! enclosed) {
+			if (! enclosed)
 				++ parenthesis_context[parenthesis_count];
-				// fprintf(stderr, "[+] (numeral) P[%d] = %d\n", parenthesis_count, parenthesis_context[parenthesis_count]);
-			}
 
 			last_type = 2;
 
@@ -292,18 +285,9 @@ int parse_expression(const char * expression, struct tokenc * const parsed_symbo
 		else if (strcmp(tok_exp.tokens[i], "(") == 0) {
 
 			strcpy(operator_stack[stack_size ++], tok_exp.tokens[i]);
-
-			// last token was a binary operator.
-			/*
-			if ((last_type == 1) && (operator_operands(tok_exp.tokens[i - 1]) == 2)) {
+			
+			if (! enclosed) 
 				++ parenthesis_context[parenthesis_count];
-				fprintf(stderr, "[+] (left p) P[%d] = %d\n", parenthesis_count, parenthesis_context[parenthesis_count]);
-			}
-			*/
-			if (! enclosed) {
-				++ parenthesis_context[parenthesis_count];
-				// fprintf(stderr, "[+] (left p) P[%d] = %d\n", parenthesis_count, parenthesis_context[parenthesis_count]);
-			}
 
 			last_type = 3;
 			++ parenthesis_count;
@@ -322,10 +306,7 @@ int parse_expression(const char * expression, struct tokenc * const parsed_symbo
 
 			while ((stack_size > 0u) && (strcmp(operator_stack[stack_size - 1], "(") != 0)) {
 				strcpy(parsed_symbols->tokens[parsed_symbols->qtt ++], operator_stack[-- stack_size]);
-
-				// printf("OP(\"%s\"): %d\n", operator_stack[stack_size], operator_operands(operator_stack[stack_size]));
 				parenthesis_context[parenthesis_count] -= (operator_operands(operator_stack[stack_size]) - 1);
-				// fprintf(stderr, "pc: "); for (int k = 0; k <= parenthesis_count; ++k) fprintf(stderr, "%d ", parenthesis_context[k]); fprintf(stderr, "\n");
 			}
 
 			if (parenthesis_context[parenthesis_count] != 1) {
@@ -337,24 +318,6 @@ int parse_expression(const char * expression, struct tokenc * const parsed_symbo
 			-- parenthesis_count;
 			stack_size --; // removing the "("
 		}
-
-
-	#if 0
-		fprintf(stderr, "\n-> \"%s\"\n", tok_exp.tokens[i]);
-		//for (size_t j = i; j < tok_exp.qtt; ++ j) fprintf(stderr, "%s ", tok_exp.tokens[j]);
-
-		fprintf(stderr, "\tStack(%llu): [ ", stack_size);
-		for (size_t j = 0; j < stack_size; ++ j) {
-			fprintf(stderr, "%s ", operator_stack[j]);
-		}
-		fprintf(stderr, "]\n\tQueue(%llu): [ ", parsed_symbols->qtt);
-		for (size_t j = 0; j < parsed_symbols->qtt; ++ j)
-			fprintf(stderr, "%s ", parsed_symbols->tokens[j]);
-		fprintf(stderr, "]\n");
-		fprintf(stderr, "\tPC(%d): ", parenthesis_count); for (int k = 0; k <= parenthesis_count; ++k) fprintf(stderr, "%d ", parenthesis_context[k]);
-		fprintf(stderr, "\n\n");
-	#endif
-
 	}
 
 	if (parenthesis_count != 0) {
@@ -368,19 +331,10 @@ int parse_expression(const char * expression, struct tokenc * const parsed_symbo
 		parenthesis_context[parenthesis_count] -= (operator_operands(operator_stack[stack_size]) - 1);
 	}
 	
-	// fprintf(stderr, "pc: "); for (int k = 0; k <= parenthesis_count; ++k) fprintf(stderr, "%d ", parenthesis_context[k]); fprintf(stderr, "\n\n");
-
 	if (parenthesis_context[parenthesis_count] != 1) {
 		fprintf(stderr, "unmatch operands\n");
 		return PE_INVALID_PARENTHESIS_OP_CONTEXT ;
 	}
-
-#if 0
-	printf("Parsed expression: ");
-	for (size_t i = 0; i < parsed_symbols->qtt; ++ i)
-		printf("%s ", parsed_symbols->tokens[i]);
-	printf("\n");
-#endif
 
 	return PE_OK;
 }
