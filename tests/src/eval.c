@@ -11,7 +11,7 @@ static struct s_table SYMBOL_TABLE = { 0 };
 
 
 static int __eval_test__(const char * _Expression) {
-	const struct tokenc p_exp;
+	struct tokenc p_exp;
 	if (parse_expression(_Expression, &p_exp) != 0)
 		return 1;
 

@@ -8,6 +8,10 @@
 #include <stdlib.h> // for "size_t"
 
 
+#if ! defined(__HSEXP_STDERR)
+	#define __HSEXP_STDERR 0
+#endif // ! defined(__HSEXP_STDERR)
+
 /*	Pre-definitions
 	---------------
 
@@ -18,7 +22,7 @@
 #define is_operator(_X)			( ((_X) == '+') || ((_X) == '-') || ((_X) == '*') || ((_X) == '/') || ((_X) == '^') || ((_X) == '%'))
 #define is_parenthesis(_X)		( ((_X) == '(') || ((_X) == ')') )
 #define is_numeral(_X)			in_range('0', '9', (char) _X)
-#define is_symbol(_X)			in_range('a', 'z', (char) _X)
+#define is_symbol(_X)			( ((_X) == '_') || in_range('a', 'z', (char) _X) || in_range('A', 'Z', (char) _X) ) 
 
 
 /*	==========
@@ -55,8 +59,10 @@ enum PARSE_ERROR {
 	PE_CONSEC_OPERATORS,
 	PE_CONSEC_OPERANDS,
 	PE_INVALID_PARENTHESIS_OP_CONTEXT,
+	PE_UNKNOWN,
+};
 
-} parse_expression(const char *, struct tokenc * const);
+enum PARSE_ERROR parse_expression(const char *, struct tokenc * const);
 // (Essentially does Syntax Analysis)
 
 
@@ -76,6 +82,9 @@ struct s_table {
 int evaluate_expression(const struct tokenc *, const struct s_table *, double * const);
 // (There goes the Semantic Analysis perhaps)
 
+
+// (...)
+bool symbol_token(const token_t);
 
 
 #endif // _HS_EXPRESSIONS_HEADER_

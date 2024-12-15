@@ -9,6 +9,14 @@
 
 #include "expressions.h"
 
+#if __HSEXP_STDERR
+	#define __raise_error(_Msg)				fprintf(stderr, _Msg)
+	#define __raise_error_f(_Msg,...)		fprintf(stderr, _Msg, __VA_ARGS__)
+#else 
+	#define __raise_error_f(_Msg, ...) // deactivated.
+	#define __raise_error(_Msg) // deactivated.
+#endif // __HSEXP_STDERR
+
 
 struct tokenc tokenize_expression(const char * _Expression) {
 	const size_t length = strlen(_Expression);
@@ -90,13 +98,23 @@ is_token_numeral(const token_t _Token) {
 	Attent to what some operators are considered symbols, therefore. */
 static inline bool
 is_token_symbol(const token_t _Token) {
-	size_t iterator = 0u;
+	// null symbol
+	if (_Token[0] == '\0')
+		return false;
+
+	// starts with a number or something else
+	else if (is_numeral(_Token[0]) || (! is_symbol(_Token[0])))
+		return false;
+
+	size_t iterator = 1u;
 	while (_Token[iterator] != '\0') {
 		char buffer = _Token[iterator ++];
-		if (is_symbol(buffer))
+		if (is_symbol(buffer) || is_numeral(buffer))
 			continue;
+
 		return false;
 	}
+
 	return true;
 }
 
@@ -237,7 +255,7 @@ enum PARSE_ERROR parse_expression(const char * expression, struct tokenc * const
 
 			// operator following operator is only allowed for unaries.
 			if ((last_type == 1) && (op_operands != 1)) {
-				fprintf(stderr, "Operator following operator!\n");
+				__raise_error("Operator following operator!\n");
 				return PE_CONSEC_OPERATORS;
 			}
 
@@ -273,8 +291,10 @@ enum PARSE_ERROR parse_expression(const char * expression, struct tokenc * const
 			}
 
 			// increments the # of terms of the enclosure as long the current one isn't closed.
-			if (! enclosed)
+			if (! enclosed) {
 				++ parenthesis_context[parenthesis_count];
+				enclosed = true;
+			}
 
 			last_type = 2;
 
@@ -300,7 +320,7 @@ enum PARSE_ERROR parse_expression(const char * expression, struct tokenc * const
 			last_type = 4;
 
 			if (parenthesis_count < 0) {
-				fprintf(stderr, "Mismatched parenthesis (CLOSE)!\n");
+				__raise_error("Mismatched parenthesis (CLOSE)!\n");
 				return PE_PARENTHESIS_CLOSE_MISMATCH;
 			}
 
@@ -310,7 +330,7 @@ enum PARSE_ERROR parse_expression(const char * expression, struct tokenc * const
 			}
 
 			if (parenthesis_context[parenthesis_count] != 1) {
-				fprintf(stderr, "parenthesis #%d is broken: %d. Last token: \"%s\" (%llu)\n", parenthesis_count, parenthesis_context[parenthesis_count], tok_exp.tokens[i], i);
+				__raise_error_f("parenthesis #%d is broken: %d. Last token: \"%s\" (%llu)\n", parenthesis_count, parenthesis_context[parenthesis_count], tok_exp.tokens[i], i);
 				return PE_INVALID_PARENTHESIS_OP_CONTEXT;
 			}
 
@@ -318,10 +338,13 @@ enum PARSE_ERROR parse_expression(const char * expression, struct tokenc * const
 			-- parenthesis_count;
 			stack_size --; // removing the "("
 		}
+		else {
+			return PE_UNKNOWN;
+		}
 	}
 
 	if (parenthesis_count != 0) {
-		fprintf(stderr, "Mismatched parenthesis (2)!\n");
+		__raise_error("Mismatched parenthesis (2)!\n");
 		return PE_PARENTHESIS_OPEN_MISMATCH;
 	}
 
@@ -332,7 +355,7 @@ enum PARSE_ERROR parse_expression(const char * expression, struct tokenc * const
 	}
 	
 	if (parenthesis_context[parenthesis_count] != 1) {
-		fprintf(stderr, "unmatch operands\n");
+		__raise_error("unmatch operands\n");
 		return PE_INVALID_PARENTHESIS_OP_CONTEXT ;
 	}
 
@@ -343,7 +366,7 @@ static inline double
 evaluate_binary_operation(double _Operand1, double _Operand2, const token_t _Operator)
 {
 	if (_Operator[1] != '\0') {
-		fprintf(stderr, "[%s] Not yet implemented1\n", __func__);
+		__raise_error_f("[%s] Not yet implemented1\n", __func__);
 		return -1;
 	}
 
@@ -362,7 +385,7 @@ evaluate_binary_operation(double _Operand1, double _Operand2, const token_t _Ope
 		return _Operand1 - floor(_Operand1 / _Operand2) * _Operand2;
 	}
 
-	fprintf(stderr, "[%s] Not yet implemented 2: %s\n", __func__, _Operator);
+	__raise_error_f("[%s] Not yet implemented 2: %s\n", __func__, _Operator);
 	return -2;
 }
 
@@ -396,7 +419,7 @@ evaluate_unary_operation(double _Operand, const token_t _Operator)
 		return 0;
 	}
 
-	fprintf(stderr, "[%s] error\n", __func__);
+	__raise_error_f("[%s] error\n", __func__);
 	return -1;
 }
 
@@ -419,7 +442,7 @@ int evaluate_expression(const struct tokenc * rp_tokens, const struct s_table * 
 			const int n_operands = operator_operands(rp_exp[i]);
 
 			if ((n_operands < 0) || (n_operands > 2)) {
-				fprintf(stderr, "ERROR\n");
+				__raise_error("ERROR\n");
 				continue;
 			}
 
@@ -463,4 +486,8 @@ int evaluate_expression(const struct tokenc * rp_tokens, const struct s_table * 
 	return 0;
 }
 
+
+inline bool symbol_token(const token_t _Token) {
+	return is_token_symbol(_Token) && ! is_token_operator(_Token);
+}
 
